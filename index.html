@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dailyblush 🌸</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #f8f4f0; --warm: #faf7f4; --blush: #f5ddd8; --blush2: #edcac3;
+    --rose: #c98880; --brown: #7b5a54; --dark: #3a2825;
+    --beige: #ede5df; --beige2: #e8dfd8; --muted: #b8a09a; --soft: #9a7870;
+  }
+  html, body { background: var(--cream); font-family: 'DM Sans', sans-serif; height: 100vh; overflow: hidden; }
+  .app { width: 100vw; height: 100vh; display: flex; position: relative; overflow: hidden; }
+
+  .g1,.g2,.g3 { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; z-index: 0; }
+  .g1 { width: 400px; height: 400px; background: #f5ddd8; opacity: 0.35; top: -100px; right: -80px; }
+  .g2 { width: 280px; height: 280px; background: #ede5df; opacity: 0.4; bottom: 0; left: 200px; }
+  .g3 { width: 200px; height: 200px; background: #f5ddd8; opacity: 0.25; top: 40%; left: 40%; }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 280px; flex-shrink: 0; height: 100vh;
+    background: white; border-right: 1px solid var(--beige);
+    display: flex; flex-direction: column; padding: 32px 24px;
+    position: relative; z-index: 2;
+    box-shadow: 2px 0 24px rgba(122,92,85,0.06); overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar-eyebrow { font-size: 9px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--rose); margin-bottom: 6px; }
+  .sidebar-date { font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 400; color: var(--dark); line-height: 1; }
+  .sidebar-date em { font-style: italic; color: var(--rose); }
+  .sidebar-weekday { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.04em; }
+  .sidebar-divider { height: 1px; background: var(--beige); margin: 20px 0; }
+
+  .sidebar-nav { display: flex; flex-direction: column; gap: 4px; margin-bottom: 20px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px;
+    cursor: pointer; transition: all 0.2s; font-size: 13px; color: var(--soft); border: 1.5px solid transparent;
+  }
+  .nav-item:hover { background: var(--warm); color: var(--brown); }
+  .nav-item.active { background: linear-gradient(135deg, #f9eeea, #f5ddd8); border-color: var(--blush2); color: var(--brown); font-weight: 500; }
+  .nav-icon { font-size: 16px; }
+
+  .sidebar-quote {
+    background: linear-gradient(145deg, #fdf8f6, #f9f0ec); border: 1px solid var(--blush);
+    border-radius: 18px; padding: 16px; position: relative; overflow: hidden; margin-bottom: 16px; flex-shrink: 0;
+  }
+  .sidebar-quote::before {
+    content: '"'; position: absolute; top: -8px; left: 10px;
+    font-family: 'Playfair Display', serif; font-size: 72px; color: var(--blush2); opacity: 0.5; line-height: 1; pointer-events: none;
+  }
+  .sq-label { font-size: 8px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--rose); margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+  .sq-label::after { content: ''; flex: 1; height: 1px; background: var(--blush2); opacity: 0.5; }
+  .sq-text { font-family: 'Playfair Display', serif; font-style: italic; font-size: 13px; color: var(--dark); line-height: 1.6; position: relative; z-index: 1; }
+  .sq-author { font-size: 10px; color: var(--muted); margin-top: 8px; letter-spacing: 0.03em; }
+  .sq-nav { display: flex; justify-content: flex-end; gap: 5px; margin-top: 10px; }
+  .q-btn { background: white; border: 1px solid var(--beige2); border-radius: 100px; width: 24px; height: 24px; cursor: pointer; font-size: 11px; color: var(--rose); display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .q-btn:hover { background: var(--blush); }
+
+  .sidebar-reminders { flex: 1; }
+  .sr-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .sr-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--dark); }
+  .sr-title em { font-style: italic; color: var(--rose); }
+  .add-r-btn { background: var(--blush); border: none; border-radius: 100px; width: 24px; height: 24px; cursor: pointer; font-size: 15px; color: var(--rose); display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .add-r-btn:hover { background: var(--blush2); }
+  .r-list { display: flex; flex-direction: column; gap: 7px; }
+  .r-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--warm); border-radius: 12px; border: 1.5px solid transparent; transition: all 0.15s; }
+  .r-item:hover { border-color: var(--blush); }
+  .r-time-block { min-width: 38px; text-align: center; }
+  .r-time { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--rose); line-height: 1; }
+  .r-ampm { font-size: 8px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .r-dot { width: 6px; height: 6px; border-radius: 50%; background: linear-gradient(135deg, var(--blush), var(--blush2)); flex-shrink: 0; }
+  .r-text { flex: 1; font-size: 11px; color: var(--dark); font-weight: 300; }
+  .r-del { background: none; border: none; color: var(--beige2); cursor: pointer; font-size: 15px; opacity: 0; transition: opacity 0.15s; }
+  .r-item:hover .r-del { opacity: 1; }
+  .add-form { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; animation: rise 0.2s ease; }
+  .mini-field { background: var(--warm); border: 1.5px solid transparent; border-radius: 10px; padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--dark); outline: none; transition: border-color 0.2s; width: 100%; }
+  .mini-field::placeholder { color: var(--muted); }
+  .mini-field:focus { border-color: var(--blush2); background: white; }
+  .confirm-btn { background: linear-gradient(135deg, #f5ddd8, #edcac3); border: none; border-radius: 10px; padding: 8px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--brown); cursor: pointer; }
+
+  /* ─── MAIN ─── */
+  .main { flex: 1; height: 100vh; overflow-y: auto; padding: 32px 32px 48px; position: relative; z-index: 1; }
+  .main::-webkit-scrollbar { width: 4px; }
+  .main::-webkit-scrollbar-track { background: transparent; }
+  .main::-webkit-scrollbar-thumb { background: var(--beige); border-radius: 4px; }
+
+  .cal-strip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 6px; margin-bottom: 24px; }
+  .cal-strip::-webkit-scrollbar { display: none; }
+  .cal-day { flex-shrink: 0; width: 48px; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0; border-radius: 14px; cursor: pointer; transition: all 0.15s; background: white; border: 1.5px solid var(--beige); }
+  .cal-day:hover { border-color: var(--blush2); }
+  .cal-day.today { background: linear-gradient(160deg, #f9eeea, #f5ddd8); border-color: var(--blush2); box-shadow: 0 2px 10px rgba(200,136,128,0.15); }
+  .cal-dayname { font-size: 8px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+  .cal-daynum { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--dark); line-height: 1; }
+  .cal-day.today .cal-daynum { color: var(--rose); }
+  .cal-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--blush2); opacity: 0; }
+  .cal-day.has-entry .cal-dot { opacity: 1; }
+
+  @keyframes rise { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+
+  .card { background: white; border-radius: 22px; padding: 22px; border: 1px solid var(--beige); box-shadow: 0 3px 20px rgba(122,92,85,0.06); animation: rise 0.3s ease; }
+  .card-title { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--dark); margin-bottom: 4px; }
+  .card-title em { font-style: italic; color: var(--rose); }
+  .card-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; letter-spacing: 0.03em; }
+
+  .mood-question { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--dark); margin-bottom: 14px; line-height: 1.3; }
+  .mood-question em { font-style: italic; color: var(--rose); }
+  .beans-row { display: flex; gap: 8px; justify-content: space-between; }
+  .bean { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.15s; }
+  .bean:hover { transform: translateY(-2px); }
+  .bean-circle { width: 44px; height: 54px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; border: 2px solid transparent; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.2s; background: white; box-shadow: 0 2px 8px rgba(122,92,85,0.08); }
+  .bean.active .bean-circle { transform: scale(1.1); box-shadow: 0 5px 16px rgba(200,136,128,0.25); }
+  .bean-label { font-size: 9px; color: var(--muted); text-align: center; letter-spacing: 0.03em; transition: color 0.2s; }
+  .bean.active .bean-label { color: var(--brown); font-weight: 500; }
+  .bean-0 .bean-circle { border-color: #f5c5a3; background: #fff8f3; }
+  .bean-1 .bean-circle { border-color: #f5dda8; background: #fffaf0; }
+  .bean-2 .bean-circle { border-color: #c8e8c8; background: #f3fbf3; }
+  .bean-3 .bean-circle { border-color: #c0d8f0; background: #f0f6fd; }
+  .bean-4 .bean-circle { border-color: #e8c0e0; background: #fdf5fb; }
+  .bean-0.active .bean-circle { background: #ffe8d6; }
+  .bean-1.active .bean-circle { background: #fff3c0; }
+  .bean-2.active .bean-circle { background: #d8f5d8; }
+  .bean-3.active .bean-circle { background: #d0e8f8; }
+  .bean-4.active .bean-circle { background: #f5d8f0; }
+
+  .cat-label { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--rose); margin-bottom: 7px; font-weight: 500; }
+  .acts-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .act-chip { display: flex; align-items: center; gap: 4px; background: var(--warm); border: 1.5px solid var(--beige); border-radius: 100px; padding: 5px 10px; font-size: 11px; color: var(--soft); cursor: pointer; transition: all 0.15s; }
+  .act-chip:hover { border-color: var(--blush2); color: var(--brown); }
+  .act-chip.active { background: linear-gradient(135deg, #f9eeea, #f5ddd8); border-color: var(--blush2); color: var(--brown); font-weight: 500; }
+  .act-emoji { font-size: 12px; }
+
+  .journal-prompt { font-family: 'Playfair Display', serif; font-style: italic; font-size: 13px; color: var(--rose); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .prompt-btn { background: none; border: none; cursor: pointer; font-size: 13px; color: var(--muted); transition: color 0.15s; padding: 0; margin-left: auto; }
+  .prompt-btn:hover { color: var(--rose); }
+  .journal-area { width: 100%; min-height: 160px; background: var(--warm); border: 1.5px solid transparent; border-radius: 14px; padding: 14px; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--dark); line-height: 1.9; resize: none; outline: none; transition: border-color 0.2s; font-weight: 300; }
+  .journal-area::placeholder { color: var(--muted); font-style: italic; }
+  .journal-area:focus { border-color: var(--blush2); background: white; }
+  .journal-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .word-count { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
+  .save-btn { background: linear-gradient(135deg, #f5ddd8, #edcac3); border: none; border-radius: 100px; padding: 7px 18px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--brown); cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(200,136,128,0.2); }
+  .save-btn:hover { transform: translateY(-1px); }
+  .save-btn.saved { background: linear-gradient(135deg, #d8f0d8, #c0e0c0); color: #4a7a4a; }
+  .section-label { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; font-weight: 500; }
+
+  /* goals */
+  .goal-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .goal-item { display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: var(--warm); border-radius: 14px; border: 1.5px solid transparent; transition: all 0.15s; }
+  .goal-item:hover { border-color: var(--blush); }
+  .goal-item.done { opacity: 0.45; }
+  .goal-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--blush2); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; transition: all 0.2s; }
+  .goal-check.on { background: linear-gradient(135deg, #f5ddd8, #edcac3); border-color: transparent; }
+  .goal-txt { flex: 1; font-size: 13px; color: var(--dark); font-weight: 300; cursor: pointer; }
+  .goal-txt.done { text-decoration: line-through; color: var(--muted); }
+  .goal-del { background: none; border: none; color: var(--beige2); cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.15s; }
+  .goal-item:hover .goal-del { opacity: 1; }
+
+  .today-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 18px; }
+
+  .past-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .past-entry { background: white; border-radius: 18px; padding: 16px 18px; border: 1px solid var(--beige); animation: rise 0.25s ease; }
+  .past-entry-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .past-entry-date { font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
+  .past-entry-mood { font-size: 18px; }
+  .past-entry-text { font-size: 12px; color: var(--dark); font-weight: 300; line-height: 1.7; }
+  .past-entry-acts { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+  .past-act { font-size: 10px; color: var(--rose); background: var(--blush); padding: 2px 8px; border-radius: 100px; }
+  .empty-state { grid-column: span 2; text-align: center; padding: 48px 20px; color: var(--muted); font-size: 13px; font-style: italic; }
+  .page-title { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--dark); margin-bottom: 20px; }
+  .page-title em { font-style: italic; color: var(--rose); }
+
+  /* ─── SCHEDULE ─── */
+  .sched-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .week-toggle { display: flex; gap: 6px; }
+  .week-btn { background: white; border: 1.5px solid var(--beige); border-radius: 100px; padding: 7px 18px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .week-btn.active { background: linear-gradient(135deg, #f5ddd8, #edcac3); border-color: var(--blush2); color: var(--brown); font-weight: 500; }
+
+  .day-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .day-tab { background: white; border: 1.5px solid var(--beige); border-radius: 14px; padding: 10px 16px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.2s; text-align: center; flex: 1; }
+  .day-tab:hover { border-color: var(--blush2); color: var(--brown); }
+  .day-tab.active { background: linear-gradient(135deg, #f9eeea, #f5ddd8); border-color: var(--blush2); color: var(--brown); font-weight: 500; }
+  .day-tab-name { font-size: 10px; letter-spacing: 0.05em; }
+  .day-tab-num { font-family: 'Playfair Display', serif; font-size: 18px; color: inherit; }
+
+  .period-list { display: flex; flex-direction: column; gap: 10px; }
+  .period-item { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: white; border-radius: 16px; border: 1px solid var(--beige); transition: all 0.2s; }
+  .period-item:hover { border-color: var(--blush2); box-shadow: 0 2px 12px rgba(122,92,85,0.06); }
+  .period-item.hr-item { background: var(--warm); border-color: var(--beige2); }
+  .period-num { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); min-width: 24px; font-weight: 500; }
+  .period-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .period-subject { font-size: 14px; font-weight: 500; color: var(--dark); flex: 1; }
+  .period-details { text-align: right; }
+  .period-teacher { font-size: 11px; color: var(--muted); }
+  .period-room { font-size: 11px; color: var(--rose); font-weight: 500; margin-top: 1px; }
+  .period-item.special { background: linear-gradient(135deg, #f9eeea, #fdf5fb); }
+  .period-item.clickable { cursor: pointer; }
+  .period-item.clickable:hover { background: linear-gradient(135deg, #f5ddd8, #f9eeea); border-color: var(--blush2); transform: translateX(3px); }
+  .go-arrow { font-size: 14px; color: var(--rose); margin-left: auto; }
+
+  /* ─── REST DAY ─── */
+  .rest-hero { text-align: center; padding: 16px 0 28px; }
+  .rest-emoji { font-size: 48px; display: block; margin-bottom: 10px; }
+  .rest-title { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark); }
+  .rest-title em { font-style: italic; color: var(--rose); }
+  .rest-sub { font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 0.04em; }
+
+  .rest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+  .rtodo-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .rtodo-item { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: var(--warm); border-radius: 14px; border: 1.5px solid transparent; transition: all 0.15s; }
+  .rtodo-item:hover { border-color: var(--blush); }
+  .rtodo-item.done { opacity: 0.45; }
+  .rcheck { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--blush2); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; transition: all 0.2s; }
+  .rcheck.on { background: linear-gradient(135deg, #f5ddd8, #edcac3); border-color: transparent; }
+  .rtodo-txt { flex: 1; font-size: 13px; color: var(--dark); font-weight: 300; cursor: pointer; }
+  .rtodo-txt.done { text-decoration: line-through; color: var(--muted); }
+  .rdel { background: none; border: none; color: var(--beige2); cursor: pointer; font-size: 16px; opacity: 0; transition: opacity 0.15s; }
+  .rtodo-item:hover .rdel { opacity: 1; }
+  .rinput-wrap { display: flex; gap: 8px; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: white; border: 1.5px solid var(--beige); border-radius: 100px; padding: 7px 16px; font-size: 12px; color: var(--muted); cursor: pointer; margin-bottom: 20px; transition: all 0.15s; }
+  .back-btn:hover { border-color: var(--blush2); color: var(--brown); }
+
+  /* ─── WEATHER ─── */
+  .weather-widget {
+    background: linear-gradient(145deg, #f9eeea, #f5e8e4);
+    border: 1px solid var(--blush);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    flex-shrink: 0;
+  }
+  .weather-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .weather-label { font-size: 8px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--rose); }
+  .weather-icon { font-size: 22px; }
+  .weather-temp { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--dark); font-weight: 400; line-height: 1; }
+  .weather-temp span { font-size: 14px; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+  .weather-condition { font-size: 11px; color: var(--soft); margin-top: 3px; letter-spacing: 0.02em; }
+  .weather-location { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .weather-loading { font-size: 11px; color: var(--muted); font-style: italic; text-align: center; padding: 8px 0; }
+`;
+
+
+const QUOTES = [
+  { text: "She is clothed with strength and dignity, and she laughs without fear of the future.", author: "— Proverbs 31:25" },
+  { text: "You are allowed to be both a masterpiece and a work in progress simultaneously.", author: "— Sophia Bush" },
+  { text: "Soft life is not the absence of hard work. It's the presence of intention.", author: "— unknown 🕯️" },
+  { text: "Do something today that your future self will thank you for.", author: "— Sean Patrick Flanery" },
+  { text: "The most beautiful thing you can wear is confidence.", author: "— Blake Lively 🌸" },
+  { text: "Be a girl with a mind, a woman with attitude, and a lady with class.", author: "— unknown ✨" },
+  { text: "She took a deep breath and let it go.", author: "— a reminder for today 🍵" },
+  { text: "Bloom where you are planted.", author: "— a gentle nudge 🌸" },
+  { text: "You are not behind. You are on your own timeline.", author: "— a hug from the universe 🤍" },
+];
+
+const MOODS = [
+  { emoji: "🥺", label: "rough" }, { emoji: "😶", label: "meh" }, { emoji: "🙂", label: "okay" },
+  { emoji: "😊", label: "good" }, { emoji: "🥰", label: "great" },
+];
+
+const ACT_CATEGORIES = [
+  { name: "self care 🌸", items: [
+    { emoji: "🧴", label: "skincare" }, { emoji: "🚿", label: "shower" },
+    { emoji: "🫧", label: "face mask" }, { emoji: "💅", label: "nails" }, { emoji: "🛁", label: "bath" },
+  ]},
+  { name: "health & fitness 💪", items: [
+    { emoji: "🫗", label: "2L water" }, { emoji: "🏋️", label: "workout" },
+    { emoji: "⚽", label: "sport" }, { emoji: "🥗", label: "ate healthy" }, { emoji: "😴", label: "good sleep" },
+  ]},
+  { name: "productivity ✏️", items: [
+    { emoji: "📚", label: "studying" }, { emoji: "📝", label: "homework" },
+    { emoji: "🧹", label: "cleaned room" }, { emoji: "🏠", label: "chores" },
+  ]},
+  { name: "extras ✨", items: [
+    { emoji: "🎵", label: "instruments" }, { emoji: "📖", label: "reading" },
+    { emoji: "📺", label: "watched tv" }, { emoji: "🎧", label: "music" }, { emoji: "🌿", label: "outside" },
+  ]},
+];
+const ACTS = ACT_CATEGORIES.flatMap(c => c.items);
+
+const PROMPTS = [
+  "What's one thing that made you smile today?",
+  "How are you really feeling right now?",
+  "What's something you're proud of today?",
+  "What do you want to let go of today?",
+  "Describe your day in three words...",
+  "What's one thing you're grateful for?",
+  "What would make tomorrow even better?",
+  "What's been on your mind lately?",
+];
+
+const DEFAULT_REMINDERS = [
+  { id: 1, time: "8:00", ampm: "AM", text: "Morning skincare & journal 🌿" },
+  { id: 2, time: "12:00", ampm: "PM", text: "Drink water & take a breath 🫧" },
+  { id: 3, time: "9:00", ampm: "PM", text: "Wind down — no screens 🌙" },
+];
+
+// Subject colours
+const SUB_COLOR = {
+  "English":     "#f5c5c5",
+  "Maths":       "#c5d8f5",
+  "Science":     "#c5f5d8",
+  "Geography":   "#f5e4c5",
+  "Religion":    "#e4c5f5",
+  "PDHPE":         "#f5d8c5",
+  "TMA":  "#f5f5c5",
+  "MyBennies":     "#c5f5f0",
+  "Visual Arts": "#f5c5e8",
+  "Homeroom":    "#e8e0d8",
+  "Assembly":    "#f5ddd8",
+  "Bennies Time":"#fdf0e8",
+  "New Norcia":  "#e8e0d8",
+};
+
+// Timetable: Week A = days 1-5, Week B = days 6-10
+// periods: P1, P2, HR, P3, P4, P5
+const TIMETABLE = {
+  A: [
+    { day: "Monday", periods: [
+      { label: "P1", subject: "Visual Arts", teacher: "WALG", room: "H202" },
+      { label: "P2", subject: "English",     teacher: "MAIE", room: "S302" },
+      { label: "HR", subject: "Homeroom",    teacher: "MERC", room: "O203", special: true },
+      { label: "P3", subject: "Geography",   teacher: "BURC", room: "F307" },
+      { label: "P4", subject: "TMA",  teacher: "HONK", room: "B307" },
+      { label: "P5", subject: "Religion",    teacher: "LEEJ", room: "D203" },
+    ]},
+    { day: "Tuesday", periods: [
+      { label: "P1", subject: "PDHPE",         teacher: "FLOR", room: "M101" },
+      { label: "P2", subject: "Maths",       teacher: "PAPA", room: "O201" },
+      { label: "HR", subject: "Homeroom",    teacher: "HOLM", room: "O203", special: true },
+      { label: "P3", subject: "English",     teacher: "MAIE", room: "S302" },
+      { label: "P4", subject: "Geography",   teacher: "BURC", room: "F307" },
+      { label: "P5", subject: "MyBennies",     teacher: "WATY", room: "F104" },
+      { label: "🏐", subject: "Volleyball Training", teacher: "After School", room: "School Courts", special: true },
+    ]},
+    { day: "Wednesday", periods: [
+      { label: "P1", subject: "Science",     teacher: "KULA", room: "C203" },
+      { label: "P2", subject: "Maths",       teacher: "PAPA", room: "O201" },
+      { label: "HR", subject: "Homeroom",    teacher: "MERC", room: "O203", special: true },
+      { label: "P3", subject: "PDHPE",         teacher: "FLOR", room: "M101" },
+      { label: "P4", subject: "PDHPE",         teacher: "FLOR", room: "M101" },
+      { label: "P5", subject: "TMA",  teacher: "HONK", room: "B307" },
+    ]},
+    { day: "Thursday", periods: [
+      { label: "P1", subject: "MyBennies",     teacher: "WATY", room: "I205" },
+      { label: "P2", subject: "Assembly",    teacher: "",     room: "",     special: true },
+      { label: "HR", subject: "Homeroom",    teacher: "MERC", room: "O203", special: true },
+      { label: "P3", subject: "Science",     teacher: "KULA", room: "C204" },
+      { label: "P4", subject: "Visual Arts", teacher: "WALG", room: "H202" },
+      { label: "P5", subject: "English",     teacher: "MAIE", room: "S302" },
+    ]},
+    { day: "Friday", periods: [
+      { label: "P1", subject: "Science",     teacher: "KULA", room: "F301" },
+      { label: "P2", subject: "Geography",   teacher: "BURC", room: "F307" },
+      { label: "HR", subject: "Homeroom",    teacher: "MERC", room: "O203", special: true },
+      { label: "P3", subject: "Religion",    teacher: "LEEJ", room: "D203" },
+      { label: "P4", subject: "Maths",       teacher: "PAPA", room: "O201" },
+      { label: "P5", subject: "TMA",  teacher: "HONK", room: "B301" },
+      { label: "🏊", subject: "Swim Practice", teacher: "After School", room: "Pool", special: true },
+    ]},
+    { day: "Saturday", periods: [
+      { label: "🏐", subject: "Volleyball Game", teacher: "7:30 – 8:30 AM", room: "Santa Sabina, Strathfield", special: true },
+    ]},
+    { day: "Sunday", periods: [
+      { label: "🌸", subject: "Rest Day", teacher: "recharge & take it easy", room: "", special: true },
+    ]},
+  ],
+  B: [
+    { day: "Monday", periods: [
+      { label: "P1", subject: "English",     teacher: "MAIE", room: "S302" },
+      { label: "P2", subject: "Visual Arts", teacher: "WALG", room: "H202" },
+      { label: "HR", subject: "Homeroom",    teacher: "MERC", room: "O203", special: true },
+      { label: "P3", subject: "TMA",  teacher: "HONK", room: "B307" },
+      { label: "P4", subject: "Maths",       teacher: "PAPA", room: "O201" },
+      { label: "P5", subject: "Bennies Time",teacher: "",     room: "",     special: true },
+    ]},
+    { day: "Tuesday", periods: [
+      { label: "P1", subject: "Science",     teacher: "KULA", room: "C203" },
+      { label: "P2", subject: "PDHPE",         teacher: "FLOR", room: "M101" },
+      { label: "HR", subject: "Homeroom",    teacher: "HOLM", room: "O203", special: true },
+      { label: "P3", subject: "Religion",    teacher: "LEEJ", room: "D203" },
+      { label: "P4", subject: "Maths",       teacher: "PAPA", room: "O201" },
+      { label: "P5", subject: "Geography",   teacher: "BURC", room: "F307" },
+      { label: "🏐", subject: "Volleyball Training", teacher: "After School", room: "School Courts", special: true },
+    ]},
+    { day: "Wednesday", periods: [
+      { label: "P1", subject: "MyBennies",     teacher: "WATY", room: "F104" },
+      { label: "P2", subject: "English",     teacher: "MAIE", room: "S302" },
+      { label: "HR", subject: "Homeroom",    teacher: "MERC", room: "O203", special: true },
+      { label: "P3", subject: "Maths",       teacher: "PAPA", room: "O201" },
+      { label: "P4", subject: "Science",     teacher: "KULA", room: "C203" },
+      { label: "P5", subject: "Visual Arts", teacher: "WALG", room: "H202" },
+    ]},
+    { day: "Thursday", periods: [
+      { label: "P1", subject: "Geography",   teacher: "BURC", room: "F307" },
+      { label: "P2", subject: "New Norcia",  teacher: "GRIE", room: "D201" },
+      { label: "HR", subject: "Homeroom",    teacher: "MERC", room: "O203", special: true },
+      { label: "P3", subject: "English",     teacher: "MAIE", room: "S302" },
+      { label: "P4", subject: "MyBennies",     teacher: "WATY", room: "F104" },
+      { label: "P5", subject: "Science",     teacher: "KULA", room: "C203" },
+    ]},
+    { day: "Friday", periods: [
+      { label: "P1", subject: "Religion",    teacher: "LEEJ", room: "D203" },
+      { label: "P2", subject: "Visual Arts", teacher: "WALG", room: "H202" },
+      { label: "HR", subject: "Homeroom",    teacher: "HOLM", room: "O203", special: true },
+      { label: "P3", subject: "MyBennies",     teacher: "WATY", room: "F104" },
+      { label: "P4", subject: "TMA",  teacher: "HONK", room: "B307" },
+      { label: "P5", subject: "PDHPE",         teacher: "FLOR", room: "M101" },
+      { label: "🏊", subject: "Swim Practice", teacher: "After School", room: "Pool", special: true },
+    ]},
+    { day: "Saturday", periods: [
+      { label: "🏐", subject: "Volleyball Game", teacher: "7:30 – 8:30 AM", room: "Santa Sabina, Strathfield", special: true },
+    ]},
+    { day: "Sunday", periods: [
+      { label: "🌸", subject: "Rest Day", teacher: "recharge & take it easy", room: "", special: true },
+    ]},
+  ],
+};
+
+function getCalDays() {
+  const today = new Date();
+  const days = [];
+  for (let i = -2; i <= 12; i++) { const d = new Date(today); d.setDate(today.getDate() + i); days.push(d); }
+  return days;
+}
+
+const DAY_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function App() {
+  const [view, setView] = useState("today");
+  const [quoteIdx, setQuoteIdx] = useState(() => new Date().getDate() % QUOTES.length);
+  const [mood, setMood] = useState(null);
+  const [acts, setActs] = useState([]);
+  const [promptIdx, setPromptIdx] = useState(0);
+  const [journal, setJournal] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [entries, setEntries] = useState([]);
+  const [reminders, setReminders] = useState(DEFAULT_REMINDERS);
+  const [showAddR, setShowAddR] = useState(false);
+  const [newTime, setNewTime] = useState("");
+  const [newRText, setNewRText] = useState("");
+  const [schedWeek, setSchedWeek] = useState("A");
+  const [schedDay, setSchedDay] = useState(0);
+  const [goals, setGoals] = useState([]);
+  const [newGoal, setNewGoal] = useState("");
+  const [weather, setWeather] = useState(null);
+
+  useEffect(() => {
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=-33.8688&longitude=151.2093&current=temperature_2m,weather_code&timezone=Australia/Sydney")
+      .then(r => r.json())
+      .then(d => {
+        const code = d.current.weather_code;
+        const temp = Math.round(d.current.temperature_2m);
+        const icons = {0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",51:"🌦️",53:"🌦️",55:"🌧️",61:"🌧️",63:"🌧️",65:"🌧️",71:"❄️",73:"❄️",75:"❄️",80:"🌦️",81:"🌧️",82:"⛈️",95:"⛈️",96:"⛈️",99:"⛈️"};
+        const descs = {0:"Sunny",1:"Mostly sunny",2:"Partly cloudy",3:"Cloudy",45:"Foggy",48:"Foggy",51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",61:"Light rain",63:"Rain",65:"Heavy rain",71:"Light snow",73:"Snow",75:"Heavy snow",80:"Showers",81:"Heavy showers",82:"Violent showers",95:"Thunderstorm",96:"Thunderstorm",99:"Thunderstorm"};
+        setWeather({ temp, icon: icons[code] || "🌡️", condition: descs[code] || "Clear" });
+      }).catch(() => setWeather({ temp: 22, icon: "🌤️", condition: "Sydney" }));
+  }, []);
+  const [restTodos, setRestTodos] = useState([
+    { id: 1, text: "Sleep in & have a slow morning 🛌", done: false },
+    { id: 2, text: "Do my skincare routine 🧴", done: false },
+    { id: 3, text: "Watch something on Netflix 📺", done: false },
+    { id: 4, text: "Go for a walk outside 🌿", done: false },
+    { id: 5, text: "Prep for the week ahead 📋", done: false },
+  ]);
+  const [newRestTodo, setNewRestTodo] = useState("");
+  const [restNote, setRestNote] = useState("");
+
+  const today = new Date();
+  const todayStr = today.toDateString();
+  const calDays = getCalDays();
+  const wordCount = journal.trim().split(/\s+/).filter(Boolean).length;
+
+  const toggleAct = label => setActs(a => a.includes(label) ? a.filter(x => x !== label) : [...a, label]);
+
+  const handleSave = () => {
+    if (!journal.trim() && mood === null) return;
+    setEntries(prev => [{ id: Date.now(), date: todayStr, mood, acts: [...acts], text: journal }, ...prev.filter(e => e.date !== todayStr)]);
+    setSaved(true); setTimeout(() => setSaved(false), 2000);
+  };
+
+  const addReminder = () => {
+    if (!newRText.trim()) return;
+    const [h, m] = (newTime || "12:00").split(":");
+    const hour = parseInt(h);
+    setReminders(r => [...r, { id: Date.now(), time: `${hour > 12 ? hour-12 : hour||12}:${m||"00"}`, ampm: hour >= 12 ? "PM" : "AM", text: newRText }]);
+    setNewTime(""); setNewRText(""); setShowAddR(false);
+  };
+
+  const currentDayPeriods = TIMETABLE[schedWeek][schedDay].periods;
+
+  return (
+    <>
+      <style>{css}</style>
+      <div className="app">
+        <div className="g1"/><div className="g2"/><div className="g3"/>
+
+        {/* SIDEBAR */}
+        <div className="sidebar">
+          <div className="sidebar-eyebrow">dailyblush</div>
+          <div className="sidebar-date">{MONTH_NAMES[today.getMonth()]} <em>{today.getDate()}</em></div>
+          <div className="sidebar-weekday">{DAY_NAMES[today.getDay()]} · {today.getFullYear()}</div>
+          <div className="sidebar-divider"/>
+          <div className="sidebar-nav">
+            <div className={`nav-item ${view==="today"?"active":""}`} onClick={() => setView("today")}><span className="nav-icon">🌸</span> Today</div>
+            <div className={`nav-item ${view==="schedule"?"active":""}`} onClick={() => setView("schedule")}><span className="nav-icon">📅</span> Timetable</div>
+            <div className={`nav-item ${view==="past"?"active":""}`} onClick={() => setView("past")}><span className="nav-icon">📖</span> Journaling History</div>
+          </div>
+
+          {/* Weather */}
+          <div className="weather-widget">
+            <div className="weather-top">
+              <div className="weather-label">Sydney, NSW</div>
+              <div className="weather-icon">{weather ? weather.icon : "🌡️"}</div>
+            </div>
+            {weather ? (
+              <>
+                <div className="weather-temp">{weather.temp}<span>°C</span></div>
+                <div className="weather-condition">{weather.condition}</div>
+              </>
+            ) : (
+              <div className="weather-loading">fetching weather... 🌸</div>
+            )}
+          </div>
+
+          <div className="sidebar-quote">
+            <div className="sq-label">quote of the day</div>
+            <div className="sq-text">{QUOTES[quoteIdx].text}</div>
+            <div className="sq-author">{QUOTES[quoteIdx].author}</div>
+            <div className="sq-nav">
+              <button className="q-btn" onClick={() => setQuoteIdx(i => (i-1+QUOTES.length)%QUOTES.length)}>←</button>
+              <button className="q-btn" onClick={() => setQuoteIdx(i => (i+1)%QUOTES.length)}>→</button>
+            </div>
+          </div>
+
+          <div className="sidebar-reminders">
+            <div className="sr-header">
+              <div className="sr-title">daily <em>reminders</em></div>
+              <button className="add-r-btn" onClick={() => setShowAddR(s => !s)}>+</button>
+            </div>
+            <div className="r-list">
+              {reminders.map(r => (
+                <div key={r.id} className="r-item">
+                  <div className="r-time-block"><div className="r-time">{r.time}</div><div className="r-ampm">{r.ampm}</div></div>
+                  <div className="r-dot"/>
+                  <div className="r-text">{r.text}</div>
+                  <button className="r-del" onClick={() => setReminders(rs => rs.filter(x => x.id !== r.id))}>×</button>
+                </div>
+              ))}
+            </div>
+            {showAddR && (
+              <div className="add-form">
+                <input className="mini-field" type="time" value={newTime} onChange={e => setNewTime(e.target.value)}/>
+                <input className="mini-field" placeholder="reminder text..." value={newRText} onChange={e => setNewRText(e.target.value)} onKeyDown={e => e.key==="Enter" && addReminder()}/>
+                <button className="confirm-btn" onClick={addReminder}>add reminder</button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* MAIN */}
+        <div className="main">
+          <div className="cal-strip">
+            {calDays.map((d, i) => {
+              const isToday = d.toDateString() === todayStr;
+              const hasEntry = entries.some(e => e.date === d.toDateString());
+              return (
+                <div key={i} className={`cal-day ${isToday?"today":""} ${hasEntry?"has-entry":""}`}>
+                  <div className="cal-dayname">{DAY_NAMES[d.getDay()].slice(0,2)}</div>
+                  <div className="cal-daynum">{d.getDate()}</div>
+                  <div className="cal-dot"/>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* TODAY */}
+          {view === "today" && (
+            <div className="today-grid">
+              <div className="col">
+                <div className="card">
+                  <div className="mood-question">how's your day, <em>love?</em> 🌸</div>
+                  <div className="beans-row">
+                    {MOODS.map((m, i) => (
+                      <div key={i} className={`bean bean-${i} ${mood===i?"active":""}`} onClick={() => setMood(mood===i?null:i)}>
+                        <div className="bean-circle">{m.emoji}</div>
+                        <div className="bean-label">{m.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="card">
+                  <div className="section-label">what did you get up to?</div>
+                  {ACT_CATEGORIES.map(cat => (
+                    <div key={cat.name}>
+                      <div className="cat-label">{cat.name}</div>
+                      <div className="acts-wrap">
+                        {cat.items.map(a => (
+                          <div key={a.label} className={`act-chip ${acts.includes(a.label)?"active":""}`} onClick={() => toggleAct(a.label)}>
+                            <span className="act-emoji">{a.emoji}</span> {a.label}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="col">
+                <div className="card">
+                  <div className="card-title">today's <em>entry</em></div>
+                  <div className="card-sub">write it down, make it real ✦</div>
+                  <div className="journal-prompt">
+                    ✦ {PROMPTS[promptIdx]}
+                    <button className="prompt-btn" onClick={() => setPromptIdx(i => (i+1)%PROMPTS.length)}>↻</button>
+                  </div>
+                  <textarea className="journal-area" placeholder="write anything... even just a few words is enough 🤍" value={journal} onChange={e => setJournal(e.target.value)}/>
+                  <div className="journal-footer">
+                    <div className="word-count">{wordCount} word{wordCount!==1?"s":""}</div>
+                    <button className={`save-btn ${saved?"saved":""}`} onClick={handleSave}>{saved?"saved ✓":"save entry"}</button>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="card-title">goals of <em>the day</em> 🎯</div>
+                  <div className="card-sub">what do you want to achieve today?</div>
+                  <div className="goal-list">
+                    {goals.length === 0 && <div style={{fontSize:"12px",color:"var(--muted)",fontStyle:"italic",padding:"8px 0"}}>no goals yet — add one below 🌸</div>}
+                    {goals.map(g => (
+                      <div key={g.id} className={`goal-item ${g.done?"done":""}`}>
+                        <div className={`goal-check ${g.done?"on":""}`} onClick={() => setGoals(gs => gs.map(x => x.id===g.id?{...x,done:!x.done}:x))}>
+                          {g.done && "✓"}
+                        </div>
+                        <span className={`goal-txt ${g.done?"done":""}`} onClick={() => setGoals(gs => gs.map(x => x.id===g.id?{...x,done:!x.done}:x))}>{g.text}</span>
+                        <button className="goal-del" onClick={() => setGoals(gs => gs.filter(x => x.id!==g.id))}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="input-wrap">
+                    <input className="field" placeholder="add a goal for today..." value={newGoal}
+                      onChange={e => setNewGoal(e.target.value)}
+                      onKeyDown={e => { if(e.key==="Enter" && newGoal.trim()) { setGoals(gs => [...gs, {id:Date.now(), text:newGoal, done:false}]); setNewGoal(""); }}}
+                    />
+                    <button className="btn-add" onClick={() => { if(newGoal.trim()) { setGoals(gs => [...gs, {id:Date.now(), text:newGoal, done:false}]); setNewGoal(""); }}}>+ add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TIMETABLE */}
+          {view === "schedule" && (
+            <>
+              <div className="sched-header">
+                <div className="page-title">your <em>timetable</em> 📅</div>
+                <div className="week-toggle">
+                  <button className={`week-btn ${schedWeek==="A"?"active":""}`} onClick={() => setSchedWeek("A")}>Week A</button>
+                  <button className={`week-btn ${schedWeek==="B"?"active":""}`} onClick={() => setSchedWeek("B")}>Week B</button>
+                </div>
+              </div>
+
+              <div className="day-tabs">
+                {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d, i) => (
+                  <div key={d} className={`day-tab ${schedDay===i?"active":""}`} onClick={() => setSchedDay(i)}>
+                    <div className="day-tab-name">{d}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="period-list">
+                {currentDayPeriods.map((p, i) => (
+                  <div key={i}
+                    className={`period-item ${p.special?"special":""} ${p.label==="HR"?"hr-item":""} ${p.subject==="Rest Day"?"clickable":""}`}
+                    onClick={() => p.subject === "Rest Day" && setView("restday")}
+                  >
+                    <div className="period-num">{p.label}</div>
+                    <div className="period-color" style={{background: SUB_COLOR[p.subject] || "#f5ddd8"}}/>
+                    <div className="period-subject">{p.subject}</div>
+                    <div className="period-details">
+                      {p.teacher && <div className="period-teacher">{p.teacher}</div>}
+                      {p.room && <div className="period-room">{p.room}</div>}
+                    </div>
+                    {p.subject === "Rest Day" && <div className="go-arrow">→</div>}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* REST DAY */}
+          {view === "restday" && (
+            <>
+              <button className="back-btn" onClick={() => setView("schedule")}>← back to timetable</button>
+              <div className="rest-hero">
+                <span className="rest-emoji">🌸</span>
+                <div className="rest-title">Sunday <em>Rest Day</em></div>
+                <div className="rest-sub">you deserve this — slow down & recharge 🕯️</div>
+              </div>
+              <div className="rest-grid">
+                <div className="card">
+                  <div className="card-title">sunday <em>to-do</em></div>
+                  <div className="card-sub">gentle things only 🤍</div>
+                  <div className="rtodo-list">
+                    {restTodos.map(t => (
+                      <div key={t.id} className={`rtodo-item ${t.done?"done":""}`}>
+                        <div className={`rcheck ${t.done?"on":""}`} onClick={() => setRestTodos(ts => ts.map(x => x.id===t.id?{...x,done:!x.done}:x))}>
+                          {t.done && "✓"}
+                        </div>
+                        <span className={`rtodo-txt ${t.done?"done":""}`} onClick={() => setRestTodos(ts => ts.map(x => x.id===t.id?{...x,done:!x.done}:x))}>{t.text}</span>
+                        <button className="rdel" onClick={() => setRestTodos(ts => ts.filter(x => x.id!==t.id))}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rinput-wrap">
+                    <input className="field" placeholder="add something for sunday..." value={newRestTodo}
+                      onChange={e => setNewRestTodo(e.target.value)}
+                      onKeyDown={e => { if(e.key==="Enter" && newRestTodo.trim()) { setRestTodos(ts => [...ts, {id:Date.now(), text:newRestTodo, done:false}]); setNewRestTodo(""); }}}
+                    />
+                    <button className="btn-add" onClick={() => { if(newRestTodo.trim()) { setRestTodos(ts => [...ts, {id:Date.now(), text:newRestTodo, done:false}]); setNewRestTodo(""); }}}>+ add</button>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="card-title">sunday <em>notes</em></div>
+                  <div className="card-sub">what do you want this day to feel like? ✦</div>
+                  <textarea className="journal-area" style={{minHeight:"220px"}}
+                    placeholder="plan your rest day, write your intentions, or just ramble... 🌸"
+                    value={restNote} onChange={e => setRestNote(e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* JOURNAL */}
+          {view === "past" && (
+            <>
+              <div className="page-title">your <em>journal</em> 📖</div>
+              <div className="past-grid">
+                {entries.length === 0
+                  ? <div className="empty-state">no entries yet, love 🌸<br/>start by writing something today</div>
+                  : entries.map(e => {
+                      const moodData = e.mood !== null ? MOODS[e.mood] : null;
+                      return (
+                        <div key={e.id} className="past-entry">
+                          <div className="past-entry-top">
+                            <div className="past-entry-date">{e.date}</div>
+                            {moodData && <div className="past-entry-mood">{moodData.emoji}</div>}
+                          </div>
+                          {e.text && <div className="past-entry-text">{e.text}</div>}
+                          {e.acts.length > 0 && (
+                            <div className="past-entry-acts">
+                              {e.acts.map(a => { const act = ACTS.find(x => x.label===a); return <span key={a} className="past-act">{act?.emoji} {a}</span>; })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                }
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
